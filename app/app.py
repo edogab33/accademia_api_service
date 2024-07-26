@@ -109,12 +109,10 @@ def put_employee(id):
     conn = get_db_connection()
     cur = conn.cursor()
     data = request.get_json(force=True)
-    print(data)
-    print(id)
-    name = data.get('name')
-    surname = data.get('surname')
-    position = data.get('position')
-    salary = data.get('salary')
+    name = data.get('nome')
+    surname = data.get('cognome')
+    position = data.get('posizione')
+    salary = data.get('stipendio')
 
     if None in [name, surname, position, salary, id]:
         return 'Missing fields', 400
@@ -131,6 +129,37 @@ def put_employee(id):
             'UPDATE persona SET nome = %s, cognome = %s, posizione = %s, stipendio = %s WHERE id = %s',
             (name, surname, position, salary, id)
         )
+    conn.commit()
+    cur.close()
+    conn.close()
+    return 'Employee created'
+
+@app.post('/employee')
+def create_employee():
+    """ Non-idempotent implementation of creating an employee
+    """
+    conn = get_db_connection()
+    cur = conn.cursor()
+    data = request.get_json(force=True)
+    name = data.get('nome')
+    surname = data.get('cognome')
+    position = data.get('posizione')
+    salary = data.get('stipendio')
+    
+    # To make sure the method is NOT idempotent, we need to generate a unique ID for the employee
+    # so that if multiple requests are made with the same data, multiple entries are created
+    cur.execute('SELECT MAX(id) FROM persona')
+    id = cur.fetchone()[0]
+    id += 1
+    
+    if None in [name, surname, position, salary]:
+        return 'Missing fields', 400
+    
+    cur.execute(
+        'INSERT INTO persona (nome, cognome, posizione, stipendio, id) VALUES (%s, %s, %s, %s, %s)', 
+        (name, surname, position, salary, id)
+    )
+    
     conn.commit()
     cur.close()
     conn.close()
