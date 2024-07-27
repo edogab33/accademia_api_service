@@ -1,3 +1,9 @@
+"""Questo modulo contiene un'implementazione RESTful di un'applicazione Flask per l'accesso,
+la modifica e la creazione del database Accademia tramite opportune API. L'applicazione è in 
+grado di gestire la richiesta di ottenere, creare, modificare e cancellare un'entità 'persona'
+dal database.
+"""
+
 import os
 import psycopg2
 from flask import Flask, request
@@ -15,49 +21,44 @@ def get_db_connection():
     print('Database connection established')
     return conn
 
-
-@app.get('/employees')
-def get_emplyees():
-    """ Get employees from the database
+@app.get('/employee/<int:id>')
+def get_employee(id):
+    """ Get an employee from the database (RESTful implementation).
     
-    Note that this function is both safe and idempotent.
+    This is both safe and idempotend.
     ---
     parameters:
-      - name: name
-        in: query
+      - name: id
+        in: path
         schema:
-          type: string
-        description: Name of the employee
-      - name: surname
-        in: query
-        schema:
-          type: string
-        description: Surname of the employee
+          type: integer
+        description: ID of the employee
     """
     conn = get_db_connection()
     cur = conn.cursor()
-    name = request.args.get('name', None)
-    surname = request.args.get('surname', None)
-    query = 'SELECT * FROM persona'
-    params = []
-
-    if name is not None:
-        query += ' WHERE nome = %s'
-        params.append(name)
-
-    if surname is not None:
-        if len(params) > 0:
-            query += ' AND cognome = %s'
-        else:
-            query += ' WHERE cognome = %s'
-        params.append(surname)
-
-    cur.execute(query, params)
-    people = cur.fetchall()
+    cur.execute('SELECT * FROM persona WHERE id = %s', (id,))
+    person = cur.fetchone()
     cur.close()
     conn.close()
-    
-    return people
+
+    if person is not None:
+        person_dict = {
+            'id': person[0],
+            'nome': person[1],
+            'cognome': person[2],
+            'posizione': person[3],
+            'stipendio': person[4]
+        }
+        result = {
+            'result': person_dict,
+            'links': {
+                'delete': f'/employee/{id}',
+                'put': f'/employee/{id}'
+            }
+        }
+        return result
+    else:
+        return 'Employee not found', 404
 
 @app.delete('/employee/<int:id>')
 def delete_employee(id):
@@ -115,7 +116,17 @@ def put_employee(id):
     salary = data.get('stipendio')
 
     if None in [name, surname, position, salary, id]:
-        return 'Missing fields', 400
+        data = {
+            "message": "Missing fields",
+            "data": {
+                "id": id,
+                "nome": name,
+                "cognome": surname,
+                "posizione": position,
+                "stipendio": salary
+            }
+        }
+        return data, 400
     
     try:
         cur.execute(
@@ -132,7 +143,87 @@ def put_employee(id):
     conn.commit()
     cur.close()
     conn.close()
-    return 'Employee created'
+    
+    result = {
+        "message": "Employee created",
+        "data": {
+            "id": id,
+            "nome": name,
+            "cognome": surname,
+            "posizione": position,
+            "stipendio": salary
+        },
+        "links": {
+            "delete": f"/employee/{id}",
+        }
+    }
+    return result
+
+
+### LIVE CODING ###
+@app.get('/employees')
+def get_emplyees():
+    """ Get employees from the database
+    
+    Note that this function is both safe and idempotent.
+    ---
+    parameters:
+      - name: name
+        in: query
+        schema:
+          type: string
+        description: Name of the employee
+      - name: surname
+        in: query
+        schema:
+          type: string
+        description: Surname of the employee
+    """
+    conn = get_db_connection()
+    cur = conn.cursor()
+    name = request.args.get('name', None)
+    surname = request.args.get('surname', None)
+    query = 'SELECT * FROM persona'
+    params = []
+
+    if name is not None:
+        query += ' WHERE nome = %s'
+        params.append(name)
+
+    if surname is not None:
+        if len(params) > 0:
+            query += ' AND cognome = %s'
+        else:
+            query += ' WHERE cognome = %s'
+        params.append(surname)
+
+    cur.execute(query, params)
+    people = cur.fetchall()
+    cur.close()
+    conn.close()
+
+    result = []
+    for person in people:
+        person_dict = {
+            'id': person[0],
+            'nome': person[1],
+            'cognome': person[2],
+            'posizione': person[3],
+            'stipendio': person[4]
+        }
+        result.append(person_dict)
+    
+    links = {
+        'delete': '/employee/<int:id>',
+        'put': '/employee/<int:id>'
+    }
+
+    response = {
+        'result': result,
+        'links': links,
+    }
+
+    return response
 
 @app.post('/employee')
 def create_employee():
@@ -147,7 +238,7 @@ def create_employee():
     salary = data.get('stipendio')
     
     # To make sure the method is NOT idempotent, we need to generate a unique ID for the employee
-    # so that if multiple requests are made with the same data, multiple entries are created
+    # so that if multiple requests are made with the same data, multiple entries are created.
     cur.execute('SELECT MAX(id) FROM persona')
     id = cur.fetchone()[0]
     id += 1
@@ -163,4 +254,17 @@ def create_employee():
     conn.commit()
     cur.close()
     conn.close()
-    return 'Employee created'
+    result = {
+        "message": "Employee created",
+        "data": {
+            "id": id,
+            "nome": name,
+            "cognome": surname,
+            "posizione": position,
+            "stipendio": salary
+        },
+        "links": {
+            "delete": f"/employee/{id}",
+        }
+    }
+    return result
