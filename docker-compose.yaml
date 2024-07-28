@@ -1,0 +1,32 @@
+version: '3.0'
+
+services:
+  postgres:
+    container_name: postgres_container_flask
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      PGDATA: /data/postgres
+    volumes:
+       - ../postgresql/postgresData:/data/postgres # to choose your personal directory, change only the left path. 
+    ports:
+      - "5432:5432" # to choose your personal port, change only the left port.
+    networks:
+      - flask_net
+    restart: unless-stopped
+
+  flask:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: flask_container
+    ports:
+      - "8080:8080"
+    networks:
+      - flask_net
+    restart: unless-stopped
+
+networks:
+  flask_net: 
+    driver: bridge

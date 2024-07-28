@@ -13,7 +13,7 @@ app = Flask(__name__)
 def get_db_connection():
     print(os.environ['PG_USERNAME'])
     print(os.environ['PG_PASSWORD'])
-    conn = psycopg2.connect(host='127.0.0.1',
+    conn = psycopg2.connect(host='postgres_container_flask',
                             port='5432',
                             database='accademia',
                             user=os.environ['PG_USERNAME'],
@@ -268,3 +268,6 @@ def create_employee():
         }
     }
     return result
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8080, debug=True)
