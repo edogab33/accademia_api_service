@@ -2,6 +2,15 @@
 la modifica e la creazione del database Accademia tramite opportune API. L'applicazione è in 
 grado di gestire la richiesta di ottenere, creare, modificare e cancellare un'entità 'persona'
 dal database.
+
+RISORSE:
+- Documentazione Psycopg2: https://www.psycopg.org/docs/index.html
+- Documentazione Flask: https://flask.palletsprojects.com/en/3.0.x/
+- Metodi HTTP: https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods
+- REST (dalla fonte, cioè Roy Thomas Fielding): 
+    - https://ics.uci.edu/~fielding/pubs/dissertation/rest_arch_style.htm
+    - https://ics.uci.edu/~fielding/pubs/dissertation/evaluation.htm
+- JSON: https://ecma-international.org/publications-and-standards/standards/ecma-404/
 """
 
 import os
