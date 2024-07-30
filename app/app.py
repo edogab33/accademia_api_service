@@ -11,14 +11,12 @@ from flask import Flask, request
 app = Flask(__name__)
 
 def get_db_connection():
-    print(os.environ['PG_USERNAME'])
-    print(os.environ['PG_PASSWORD'])
     conn = psycopg2.connect(host='postgres_container_flask',
                             port='5432',
                             database='accademia',
                             user=os.environ['PG_USERNAME'],
                             password=os.environ['PG_PASSWORD'])
-    print('Database connection established')
+    print('Connessione al database effettuata correttamente')
     return conn
 
 @app.get('/employee/<int:id>')
@@ -37,20 +35,20 @@ def get_employee(id):
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute('SELECT * FROM persona WHERE id = %s', (id,))
-    person = cur.fetchone()
+    employee = cur.fetchone()
     cur.close()
     conn.close()
 
-    if person is not None:
-        person_dict = {
-            'id': person[0],
-            'nome': person[1],
-            'cognome': person[2],
-            'posizione': person[3],
-            'stipendio': person[4]
+    if employee is not None:
+        employee_dict = {
+            'id': employee[0],
+            'nome': employee[1],
+            'cognome': employee[2],
+            'posizione': employee[3],
+            'stipendio': employee[4]
         }
         result = {
-            'result': person_dict,
+            'result': employee_dict,
             'links': {
                 'delete': f'/employee/{id}',
                 'put': f'/employee/{id}'
@@ -58,7 +56,7 @@ def get_employee(id):
         }
         return result
     else:
-        return 'Employee not found', 404
+        return 'Strutturato non trovato', 404
 
 @app.delete('/employee/<int:id>')
 def delete_employee(id):
@@ -77,11 +75,11 @@ def delete_employee(id):
     conn.commit()
     cur.close()
     conn.close()
-    return 'Employee deleted'
+    return 'Strutturato eliminato'
 
 @app.put('/employee/<int:id>')
 def put_employee(id):
-    """Update or create an employee in the database
+    """ Replace or create an employee in the database
     
     Note that this function is idempotent.
     ---
@@ -98,23 +96,21 @@ def put_employee(id):
             schema:
                 type: object
                 properties:
-                name:
+                nome:
                     type: string
-                surname:
+                cognome:
                     type: string
-                position:
+                posizione:
                     type: string
-                salary:
+                stipendio:
                     type: integer
     """
-    conn = get_db_connection()
-    cur = conn.cursor()
     data = request.get_json(force=True)
     name = data.get('nome')
     surname = data.get('cognome')
     position = data.get('posizione')
     salary = data.get('stipendio')
-
+    
     if None in [name, surname, position, salary, id]:
         data = {
             "message": "Missing fields",
@@ -127,6 +123,9 @@ def put_employee(id):
             }
         }
         return data, 400
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
     
     try:
         cur.execute(
@@ -145,7 +144,7 @@ def put_employee(id):
     conn.close()
     
     result = {
-        "message": "Employee created",
+        "message": "Strutturato registrato correttamente",
         "data": {
             "id": id,
             "nome": name,
@@ -158,7 +157,6 @@ def put_employee(id):
         }
     }
     return result
-
 
 ### LIVE CODING ###
 @app.get('/employees')
