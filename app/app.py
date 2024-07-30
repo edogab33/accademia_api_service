@@ -113,7 +113,7 @@ def put_employee(id):
     
     if None in [name, surname, position, salary, id]:
         data = {
-            "message": "Missing fields",
+            "message": "Campi mancanti",
             "data": {
                 "id": id,
                 "nome": name,
