@@ -19,6 +19,6 @@ Dopo aver eseguito l'installazione e l'avvio dei container, saranno attivi sia i
 
 Il server Flask è in ascolto all'indirizzo indicato, in modo che possa ricevere richieste HTTP; ad esempio possiamo chiedere il record relativo allo strutturato con `id` uguale a 20 eseguendo una richiesta di tipo GET:
 
-```HTTP
+```
 0.0.0.0:8080/employee/20
 ```
