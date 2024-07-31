@@ -136,21 +136,13 @@ def put_employee(id):
     conn = get_db_connection()
     cur = conn.cursor()
     
-    try:
-        cur.execute(
-            'INSERT INTO persona (nome, cognome, posizione, stipendio, id) VALUES (%s, %s, %s, %s, %s)', 
-            (name, surname, position, salary, id)
-        )
-    except psycopg2.errors.UniqueViolation:
-        print('Employee already exists, updating')
-        conn.rollback()
-        cur.execute(
-            'UPDATE persona SET nome = %s, cognome = %s, posizione = %s, stipendio = %s WHERE id = %s',
-            (name, surname, position, salary, id)
-        )
-    conn.commit()
-    cur.close()
-    conn.close()
+    cur.execute(
+        """INSERT INTO persona (nome, cognome, posizione, stipendio, id)
+        VALUES (%s, %s, %s, %s, %s)
+        ON CONFLICT (id) DO UPDATE 
+        SET nome = %s, cognome = %s, posizione = %s, stipendio = %s""",
+        (name, surname, position, salary, id, name, surname, position, salary)
+    )
     
     result = {
         "message": "Strutturato registrato correttamente",
