@@ -11,6 +11,7 @@ RISORSE:
     - https://ics.uci.edu/~fielding/pubs/dissertation/rest_arch_style.htm
     - https://ics.uci.edu/~fielding/pubs/dissertation/evaluation.htm
 - JSON: https://ecma-international.org/publications-and-standards/standards/ecma-404/
+- RFC Standard (qui trovate *tutto*): https://www.rfc-editor.org/rfc/rfc9110
 """
 
 import os
@@ -30,7 +31,7 @@ def get_db_connection():
 
 @app.get('/employee/<int:id>')
 def get_employee(id):
-    """ Get an employee from the database (RESTful implementation).
+    """ Get an employee from the database.
     
     This is both safe and idempotend.
     ---
@@ -146,115 +147,6 @@ def put_employee(id):
     
     result = {
         "message": "Strutturato registrato correttamente",
-        "data": {
-            "id": id,
-            "nome": name,
-            "cognome": surname,
-            "posizione": position,
-            "stipendio": salary
-        },
-        "links": {
-            "delete": f"/employee/{id}",
-        }
-    }
-    return result
-
-### LIVE CODING ###
-@app.get('/employees')
-def get_emplyees():
-    """ Get employees from the database
-    
-    Note that this function is both safe and idempotent.
-    ---
-    parameters:
-      - name: name
-        in: query
-        schema:
-          type: string
-        description: Name of the employee
-      - name: surname
-        in: query
-        schema:
-          type: string
-        description: Surname of the employee
-    """
-    conn = get_db_connection()
-    cur = conn.cursor()
-    name = request.args.get('name', None)
-    surname = request.args.get('surname', None)
-    query = 'SELECT * FROM persona'
-    params = []
-
-    if name is not None:
-        query += ' WHERE nome = %s'
-        params.append(name)
-
-    if surname is not None:
-        if len(params) > 0:
-            query += ' AND cognome = %s'
-        else:
-            query += ' WHERE cognome = %s'
-        params.append(surname)
-
-    cur.execute(query, params)
-    people = cur.fetchall()
-    cur.close()
-    conn.close()
-
-    result = []
-    for person in people:
-        person_dict = {
-            'id': person[0],
-            'nome': person[1],
-            'cognome': person[2],
-            'posizione': person[3],
-            'stipendio': person[4]
-        }
-        result.append(person_dict)
-    
-    links = {
-        'delete': '/employee/<int:id>',
-        'put': '/employee/<int:id>'
-    }
-
-    response = {
-        'result': result,
-        'links': links,
-    }
-
-    return response
-
-@app.post('/employee')
-def create_employee():
-    """ Non-idempotent implementation of creating an employee
-    """
-    conn = get_db_connection()
-    cur = conn.cursor()
-    data = request.get_json(force=True)
-    name = data.get('nome')
-    surname = data.get('cognome')
-    position = data.get('posizione')
-    salary = data.get('stipendio')
-    
-    # To make sure the method is NOT idempotent, we need to generate a unique ID for the employee
-    # so that if multiple requests are made with the same data, multiple entries are created.
-    cur.execute('SELECT MAX(id) FROM persona')
-    id = cur.fetchone()[0]
-    id += 1
-    
-    if None in [name, surname, position, salary]:
-        return 'Missing fields', 400
-    
-    cur.execute(
-        'INSERT INTO persona (nome, cognome, posizione, stipendio, id) VALUES (%s, %s, %s, %s, %s)', 
-        (name, surname, position, salary, id)
-    )
-    
-    conn.commit()
-    cur.close()
-    conn.close()
-    result = {
-        "message": "Employee created",
         "data": {
             "id": id,
             "nome": name,
